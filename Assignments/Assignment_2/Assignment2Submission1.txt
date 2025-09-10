@@ -1,0 +1,24 @@
+##Assignment 2, Step 4
+all_csv <- list.files('Data/', pattern = '.csv')
+
+##Assignment 2, Step 5
+length(all_csv)
+
+##Assignment 2, Step 6
+df <- read.csv(file = 'Data/wingspan_vs_mass.csv')
+
+##Assignment 2, Step 7
+head(df, n = 5)
+
+##Assignment 2, Step 8
+b_files <- list.files('Data/', pattern = '^b', recursive = T)
+
+##Assignment 2, Step 9 
+for (i in b_files) {
+  file_path_b <- file.path("Data", i) 
+  print(readLines(file_path_b, n = 1))}
+
+##Assignment 2, Step 10
+for (i in all_csv)
+{file_path_all <- file.path("Data", i)
+print(readLines(file_path_all, n = 1))}
