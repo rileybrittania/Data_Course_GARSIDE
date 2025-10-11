@@ -48,6 +48,7 @@ View(state_max_fatality_rate)
   #Even with this partial data set (not current), you should be able to see that (within these dates), different states had very different fatality ratios.
 state_max_fatality_rate <- state_max_fatality_rate %>%
   mutate(Province_State = fct_reorder(Province_State, Maximum_Fatality_Ratio, .desc = TRUE))
+View(state_max_fatality_rate)
 
 Deaths_by_State_Plot <- state_max_fatality_rate %>% 
   ggplot(aes(x = Province_State,
