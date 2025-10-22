@@ -1,0 +1,22 @@
+IDEA FOR FINAL PROJECT
+Compare/contrast some of the most well-studied human proteins using the following characteristics:
+protein category/class
+structure identification method (x-ray diffraction, alphafold2, alphafold3)
+number of amino acids in sequence
+root-mean square deviation (measures how well structures are aligned)
+
+Sources/Tools
+https://pmc.ncbi.nlm.nih.gov/articles/PMC7980527/
+RSCB Protein Data Bank
+PyMOL
+tidyverse package in R
+ggplot2 package in R
+bio3d package in R
+Alpha Fold 2
+Alpha Fold 3
+
+Data Look/Type
+PDB/CIF files
+A data frame that summarizes everything in the form of a CSV file
+Plots to compare different characteristics (i.e. histogram comparing sequence length vs x-ray diffraction resolution, )
+Images of aligned proteins (show which ones lined up well and which didn't)?
