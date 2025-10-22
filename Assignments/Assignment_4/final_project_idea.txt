@@ -18,5 +18,5 @@ Alpha Fold 3
 Data Look/Type
 PDB/CIF files
 A data frame that summarizes everything in the form of a CSV file
-Plots to compare different characteristics (i.e. histogram comparing sequence length vs x-ray diffraction resolution, )
+Plots to compare different characteristics (i.e. sequence length vs x-ray diffraction resolution, pTM vs RMSD, sequence length vs RMSD)
 Images of aligned proteins (show which ones lined up well and which didn't)?
