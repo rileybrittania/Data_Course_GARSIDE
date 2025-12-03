@@ -1,0 +1,20 @@
+1. Are any of your predicted response values from your best model scientifically meaningless? Explain.
+The predicted response values all fall within the growth rate range, but when the dataset has only three options for light it can make the relationship more difficult to explore. I wouldn't say the prediction is scientifically meaningless, but I'm not sure it's scientifically meaningful either.
+
+2. In your plots, did you find any non-linear relationships? Do a bit of research online and give a link to at least one resource explaining how to deal with modeling non-linear relationships in R.
+The most non-linear relationship seemed to be between nitrogen and growth rate (the graph looked more like a parabola than a line).
+Links:
+https://otexts.com/fpp2/nonlinear-regression.html
+https://www.youtube.com/watch?v=6V_VvweZkoI&t=2s
+
+3. Write the code you would use to model the data found in “/Data/non_linear_relationship.csv” with a linear model (there are a few ways of doing this).
+
+non_linear_df <- read.csv('non_linear_relationship.csv')
+View(non_linear_df)
+non_linear_df %>% 
+  ggplot(aes(x = predictor, y = response)) +
+  geom_point()
+install.packages('mgcv')
+library(mgcv)
+gam_mod <- gam(response ~ s(predictor), data = non_linear_df)
+summary(gam_mod)
