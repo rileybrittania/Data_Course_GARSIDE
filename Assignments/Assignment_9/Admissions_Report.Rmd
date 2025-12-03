@@ -1,0 +1,115 @@
+---
+title: "Assignment_9"
+output: html_document
+date: "2025-12-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(easystats)
+library(GGally)
+library(MASS)
+```
+
+# Read-In Data
+```{r}
+grad_df <- read.csv("GradSchool_Admissions.csv")
+```
+
+# Explorations
+```{r}
+View(grad_df)
+grad_df %>% 
+  ggpairs()
+```
+
+Based on the correlation matrices, it looks like no single variable affects admission more than the others. The most useful plot appears to show a positive relationship between GPA and GRE scores, though.
+
+Let's make some models now. I'll start with the most simple ones. Since our dependent variable is binary, I need to account for that in my models by using family = 'binomial'.
+
+```{r}
+gpa_mod <- glm(data = grad_df,
+               formula = admit ~ gpa,
+               family = 'binomial')
+summary(gpa_mod)
+
+gre_mod <- glm(data = grad_df,
+               formula = admit ~ gre,
+               family = 'binomial')
+summary(gre_mod)
+
+rank_mod <- glm(data = grad_df,
+               formula = admit ~ rank,
+               family = 'binomial')
+summary(rank_mod)
+```
+
+Alright, so they all show that there is a very significant relationship (low p-value). Now to try some different variable combinations. Typically, including the interactions between two independent variables makes a better model, so I'll focus on that.
+
+```{r}
+gpa_gre_mod <- glm(data = grad_df,
+               formula = admit ~ gpa * gre,
+               family = 'binomial')
+summary(gpa_gre_mod)
+
+gpa_rank_mod <-glm(data = grad_df,
+               formula = admit ~ gpa * rank,
+               family = 'binomial')
+summary(gpa_rank_mod)
+
+gre_rank_mod <- glm(data = grad_df,
+               formula = admit ~ gre * rank,
+               family = 'binomial')
+summary(gre_rank_mod)
+```
+
+Interesting, so the significance actually decreases (p-value increases) with these models. Now I'll try using MASS to find the "best" model. 
+
+```{r}
+mod_all <- glm(dat = grad_df,
+                     formula = admit ~ gpa * gre * rank,
+               family = 'binomial')
+best_mod = stepAIC(mod_all)
+best_mod$formula
+```
+
+Sure enough, the "best" model accounts for all of the variables separately, but takes into account the interaction between GRE scores and GPA. Now I will compare the models to see if our "best" model is "perfect", while still including the interactions models for extra verification.
+
+```{r}
+compare_performance(best_mod, gpa_mod, gre_mod, rank_mod, 
+                    gpa_gre_mod, gpa_rank_mod, gre_rank_mod) %>% plot()
+```
+
+It looks like the "best" model isn't "perfect" after all. Now I want to see how accurate it is (how often does it correctly predict admission).
+
+```{r}
+grad_df$pred = predict(best_mod, grad_df, type = 'response')
+View(grad_df)
+grad_df %>% 
+  ggplot(aes(x = admit,
+             y = pred)) +
+  geom_point()
+```
+This plot was supposed to give me a good dividing line to know what prediction values indicate acceptance or rejection, but it's kind of hard to find a clear divide. It looks like no one prediction score about 0.075 was admitted, so we'll use that as our dividing line.
+
+```{r}
+grad_df = grad_df %>% 
+  mutate(outcome = case_when(pred > 0.075 ~ 'Accept',
+                             pred < 0.075 ~ 'Reject',
+                             TRUE ~ 'Not sure')) %>% 
+  mutate(compare = case_when(admit == 0 & outcome == 'Reject' ~ 'Correct',
+                             admit == 1 & outcome == 'Accept' ~ 'Correct',
+                             TRUE ~ 'Not correct'))
+View(grad_df)
+table(grad_df$outcome)
+table(grad_df$compare)
+```
+The accuracy of the model with these prediction parameters can be calculated by dividing the number of correct predictions by the number of total predictions. Therefore, 138/400 = 0.345, meaning my model can only correctly predict grad school admission 34.5% of the time.
+
+# Conclusions 
+Even though a model may sound really promising, it might not be the most accurate when compared with actual data. In the future, I would like to do see if there are other factors that could also affect graduate school admissions, such as essay scores or research opportunities. This information may help me create a better model that has a higher percentage of accurate predictions.
