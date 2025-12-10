@@ -1,0 +1,156 @@
+---
+title: "GARSIDE_Skills_Test_3"
+output: html_document
+date: "2025-11-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages 
+
+Before I do anything, I need to make sure that all of the packages I'm going to be using are loaded. 
+```{r message=FALSE, warning=FALSE, results='hide'}
+library(tidyverse)
+library(broom)
+library(purrr)
+```
+
+
+# TASK I
+
+To begin, I read-in the data set and looked at it so I could figure out what to clean. It looked like my best bet would be to separate the data set into three pieces (salary, comp, and count), fix the problem columns, then join them all back together. Even though the graph I replicated doesn't include most of the columns I decided to keep/fix, I wanted to keep the data as close to the original set as possible. I was also struggling to figure out how to filter out the additional school tier VIIB, so I used Grok and got my code from what it suggested.
+```{r message=FALSE, warning=FALSE, results='hide'}
+faculty_df <- read.csv('FacultySalaries_1995.csv')
+View(faculty_df)
+str(faculty_df)
+names(faculty_df)
+
+keep = c("FedID","UnivName","State","Tier")
+
+salary_df <- faculty_df %>%
+  select(keep, AvgAssistProfSalary, AvgAssocProfSalary, AvgFullProfSalary) %>%
+  filter(Tier %in% c("I", "IIA", "IIB")) %>%
+  pivot_longer(
+    cols = starts_with("Avg"),
+    names_to = "Rank",
+    values_to = "Salary") %>%
+  mutate(
+    Rank = case_when(
+      Rank == "AvgAssistProfSalary" ~ "Assist",
+      Rank == "AvgAssocProfSalary" ~ "Assoc",
+      Rank == "AvgFullProfSalary" ~ "Full"),
+    Rank = factor(Rank, levels = c("Assist", "Assoc", "Full")),
+    Tier = factor(Tier, levels = c("I", "IIA", "IIB")))
+
+comp_df <- faculty_df %>%
+  select(keep, AvgAssistProfComp, AvgAssocProfComp, AvgFullProfComp) %>%
+  filter(Tier %in% c("I", "IIA", "IIB")) %>%
+  pivot_longer(
+    cols = starts_with("Avg"),
+    names_to = "Rank",
+    values_to = "Comp") %>%
+  mutate(
+    Rank = case_when(
+      Rank == "AvgAssistProfComp" ~ "Assist",
+      Rank == "AvgAssocProfComp" ~ "Assoc",
+      Rank == "AvgFullProfComp" ~ "Full"),
+    Rank = factor(Rank, levels = c("Assist", "Assoc", "Full")),
+    Tier = factor(Tier, levels = c("I", "IIA", "IIB")))
+
+count_df <- faculty_df %>%
+  select(keep, "NumFullProfs", "NumAssocProfs", "NumAssistProfs") %>%
+  filter(Tier %in% c("I", "IIA", "IIB")) %>%
+  pivot_longer(
+    cols = starts_with("Num"),
+    names_to = "Rank",
+    values_to = "Count") %>%
+  mutate(
+    Rank = case_when(
+      Rank == "NumAssistProfs" ~ "Assist",
+      Rank == "NumAssocProfs" ~ "Assoc",
+      Rank == "NumFullProfs" ~ "Full"),
+    Rank = factor(Rank, levels = c("Assist", "Assoc", "Full")),
+    Tier = factor(Tier, levels = c("I", "IIA", "IIB")))
+
+money_df = full_join(salary_df,comp_df)
+clean_df = full_join(money_df,count_df)
+```
+
+Now that my data is all nice and clean, it's time to replicate the graph. I noticed that there were some NA values in the salary column, so I wanted to make sure those were filtered out before plotting. However, just doing filter(is.na) was not working, so I used Grok to look up the error I was getting and I got the first four lines of code from what it suggested.
+```{r}
+clean_df %>% 
+  drop_na(Salary) %>%
+  group_by(Tier, Rank) %>%
+  filter(n() >= 2) %>%
+  ungroup() %>% 
+  ggplot(aes(x = Rank,
+             y = Salary,
+             fill = Rank)) +
+  geom_boxplot() +
+  facet_wrap(~ Tier) +
+  theme_minimal()
+```
+
+
+# TASK II
+
+The next thing I need to do is build an ANOVA model that tests how salary is impacted by state, tier and rank. Since I couldn't find anything on ANOVA in my notes or the class notes, I did some internet searching to figure out what I needed to do. Turns out, it's like the linear modeling we did in class, so I just swapped glm() for aov(). 
+
+```{r}
+anova_mod = aov(data = clean_df,
+                formula = Salary ~ State + Rank + Tier)
+summary(anova_mod)
+```
+
+# TASK III
+
+Now we are moving onto another data set. Like with the first one, I read it in and looked at it before cleaning. It looked like I basically just had to move the chemical names to a "ChemicalID" column and the values (Mass Spec Concentrations) to a "Concentrations" column. Unfortunately, the list given in the exam instructions uses - instead of . in the column names, so I had to get all of those swapped out (using Grok to help me).
+```{r}
+oils_df <- read.csv("Juniper_Oils.csv")
+clean_oils_df = oils_df %>% 
+  rename_with(~ str_replace_all(., "\\.", "-")) %>%
+  pivot_longer(c("alpha-pinene","para-cymene","alpha-terpineol","cedr-9-ene","alpha-cedrene","beta-cedrene","cis-thujopsene","alpha-himachalene","beta-chamigrene","cuparene","compound-1","alpha-chamigrene","widdrol","cedrol","beta-acorenol","alpha-acorenol","gamma-eudesmol","beta-eudesmol","alpha-eudesmol","cedr-8-en-13-ol","cedr-8-en-15-ol","compound-2","thujopsenal"),
+               names_to = "ChemicalID",
+               values_to = "Concentration")
+```
+
+# TASK IV
+
+Now I have another figure to replicate. Luckily, this one is a little less complex.
+```{r}
+clean_oils_df %>% 
+  ggplot(aes(x = YearsSinceBurn,
+             y = Concentration)) +
+  geom_smooth(method = 'loess') +
+  facet_wrap(~ChemicalID, scales = 'free_y')
+```
+
+# TASK V
+
+Finally, I need to make another model showing the chemicals that had their concentrations significantly decrease over time. I've never used the tidy() function like the instructions direct, so I looked it up within R Studio to see what it does. For sake of simplicity, I will only say that the following code was the result took several attempts of back-and-forth troubleshooting with Grok and restarting RStudio to get it to work. I know it doesn't exactly match the example in the exam instructions (though I'm not sure if it was even supposed to) but at this point, I'm just happy I got some sort of output. 
+```{r}
+significant_compounds = clean_oils_df %>%
+  mutate(ChemicalID = as.character(ChemicalID)) %>%
+  group_by(ChemicalID) %>%
+  summarise(
+    model = list(lm(Concentration ~ YearsSinceBurn)),
+    tidy  = list(broom::tidy(model[[1]])),
+    .groups = "drop") %>%
+  unnest(tidy) %>%
+  filter(p.value < 0.05) %>%
+  mutate(term = if_else(term == "(Intercept)",
+                        ChemicalID,
+                        paste0(ChemicalID, ":YearsSinceBurn"))) %>%
+  select(term, estimate, std.error, statistic, p.value) %>%
+  arrange(p.value) %>%
+  mutate(p.value = format(p.value, scientific = TRUE, digits = 2))
+print(significant_compounds, n = 24)
+```
+
+
+
+
+
+
